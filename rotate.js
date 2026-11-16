@@ -42,7 +42,7 @@
     panel.addEventListener('click',event=>event.stopPropagation());
     panel.addEventListener('dblclick',event=>event.stopPropagation());
     panel.append(button,minus,slider,plus,output);
-    const state={button,panel,angle:0,base:video.style.rotate};
+    const state={button,panel,angle:0,base:video.style.rotate,baseScale:video.style.scale};
     button.addEventListener('click',event=>{
       event.preventDefault(); event.stopPropagation();
       state.angle=(state.angle+90)%360;
@@ -54,6 +54,25 @@
     scope.querySelectorAll('video').forEach(add);
     scope.querySelectorAll('*').forEach(el=>{if(el.shadowRoot) scan(el.shadowRoot);});
   }
+  // Measure the original playback box synchronously; restore before painting.
+  // Clearing only our individual rotate/scale leaves the site's transform intact.
+  function playbackRect(video,state,time) {
+    if(state.rect && time-state.measuredAt<100) return state.rect;
+    const saved=['rotate','scale','transition'].map(name=>[name,video.style.getPropertyValue(name),video.style.getPropertyPriority(name)]);
+    try {
+      video.style.setProperty('transition','none','important');
+      video.style.setProperty('rotate',state.base || 'none','important');
+      video.style.setProperty('scale',state.baseScale || 'none','important');
+      state.rect=video.getBoundingClientRect();
+      state.measuredAt=time;
+      return state.rect;
+    } finally {
+      for(const [name,value,priority] of saved) {
+        if(value) video.style.setProperty(name,value,priority);
+        else video.style.removeProperty(name);
+      }
+    }
+  }
   let lastScan=0;
   function layout(time) {
     if(time-lastScan>1000){scan(document);lastScan=time;}
@@ -62,7 +81,7 @@
     if(host.parentNode!==parent) parent.append(host);
     for(const [video,state] of entries){
       if(!video.isConnected){state.panel.remove();entries.delete(video);continue;}
-      const rect=fullscreen && fullscreen.contains(video)?{width:innerWidth,height:innerHeight,top:0,left:0,right:innerWidth,bottom:innerHeight}:video.getBoundingClientRect();
+      const rect=fullscreen && fullscreen.contains(video)?{width:innerWidth,height:innerHeight,top:0,left:0,right:innerWidth,bottom:innerHeight}:playbackRect(video,state,time);
       const visible=controlsVisible && (!fullscreen || fullscreen.contains(video)) && rect.width>=60 && rect.height>=50 && rect.bottom>0 && rect.right>0 && rect.top<innerHeight && rect.left<innerWidth && getComputedStyle(video).visibility!=='hidden';
       state.panel.style.display=visible?'flex':'none';
       state.panel.style.left=`${Math.max(0,Math.min(innerWidth-state.panel.offsetWidth-8,rect.right-state.panel.offsetWidth-8))}px`;

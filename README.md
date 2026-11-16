@@ -5,7 +5,7 @@ Chrome 扩展：视频右上角自动出现旋转和缩放控件。每次顺时�
 Chrome extension: rotate videos clockwise by 90° and zoom with a slider or − / + buttons.
 
 **仓库 / Repo:** https://github.com/ZhangJP-wh/chrome-video-rotate  
-**版本 / Version:** 1.2.0
+**版本 / Version:** 1.2.1
 
 ## 给电脑小白：一分钟安装 / 1-minute install
 
@@ -52,6 +52,10 @@ No cookies, browsing-history storage, analytics, or external requests. Only the 
 Targets HTML video. Internal pages, the Web Store, closed shadow roots, and special players may be unsupported. Native fullscreen may hide controls. Zoom out to reduce cropping. Real-site compatibility has not been comprehensively tested.
 
 ## 变更 / Changelog
+
+### 1.2.1
+
+控件固定在原始播放区域的右上角，旋转或缩放视频不改变控件大小与位置。页面滚动或播放器布局改变时仍跟随播放区域。 / Controls stay anchored to the original playback box when the video rotates or zooms, while following page scrolling and layout changes.
 
 ### 1.2.0
 

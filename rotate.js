@@ -1,13 +1,25 @@
 (() => {
   'use strict';
   const entries = new Map();
+  let controlsVisible = true;
+  let visibilityRevision = 0;
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.controlsVisible) {
+      visibilityRevision++;
+      controlsVisible = changes.controlsVisible.newValue !== false;
+    }
+  });
+  const initialRevision = visibilityRevision;
+  chrome.storage.local.get('controlsVisible').then(settings => {
+    if (initialRevision === visibilityRevision) controlsVisible = settings.controlsVisible !== false;
+  });
   const host = document.createElement('div');
   host.style.cssText = 'all:initial;position:fixed;inset:0;pointer-events:none;z-index:2147483647;';
   const root = host.attachShadow({mode:'closed'});
   root.innerHTML = `<style>
-    button{all:unset;box-sizing:border-box;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:9px;color:white;background:rgba(25,25,28,.42);opacity:.65;cursor:pointer;pointer-events:auto;backdrop-filter:blur(6px);transition:opacity .15s,background .15s;}
+    button{all:unset;box-sizing:border-box;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:9px;color:white;background:rgba(25,25,28,.42);cursor:pointer;pointer-events:auto;transition:opacity .15s,background .15s;}
     button:hover,button:focus-visible{opacity:1;background:rgba(25,25,28,.75);outline:2px solid rgba(255,255,255,.8);outline-offset:2px}
-    .tools{position:fixed;display:flex;align-items:center;gap:5px;background:#2228;border-radius:9px;padding:4px;pointer-events:auto;color:white;font:12px system-ui} input{width:90px} svg{width:25px;height:25px;pointer-events:none}
+    .tools{position:fixed;display:flex;align-items:center;gap:5px;background:rgba(25,25,28,.8);opacity:.18;transition:opacity .18s;border-radius:9px;padding:4px;pointer-events:auto;color:white;font:12px system-ui} .tools:hover,.tools:focus-within{opacity:1} input{width:90px;accent-color:#0a84ff} output{min-width:38px;text-align:center} svg{width:25px;height:25px;pointer-events:none}
   </style>`;
   document.documentElement.append(host);
   function add(video) {
@@ -19,18 +31,17 @@
     const slider=document.createElement('input');slider.type='range';slider.min=10;slider.max=200;slider.value=100;slider.setAttribute('aria-label','视频缩放');
     const output=document.createElement('output');output.textContent='100%';
     slider.oninput=()=>{video.style.scale=slider.value/100;output.textContent=slider.value+'%';};
-    const full=document.createElement('button');full.textContent='⛶';full.title='全屏播放';
-    full.onclick=async()=>{
-      if(document.fullscreenElement){await document.exitFullscreen();return;}
-      const marker=document.createComment('video');video.before(marker);
-      const stage=document.createElement('div');stage.style.cssText='position:fixed;inset:0;background:black;display:flex;align-items:center;justify-content:center;overflow:hidden';
-      const old=video.getAttribute('style');document.documentElement.append(stage);stage.append(video);
-      for(const [k,v] of Object.entries({width:'100%',height:'100%',position:'static',objectFit:'contain',maxWidth:'none',maxHeight:'none'}))video.style[k]=v;
-      const restore=()=>{if(document.fullscreenElement===stage)return;document.removeEventListener('fullscreenchange',restore);const r=video.style.rotate,z=video.style.scale;marker.replaceWith(video);if(old===null)video.removeAttribute('style');else video.setAttribute('style',old);video.style.rotate=r;video.style.scale=z;stage.remove();};
-      document.addEventListener('fullscreenchange',restore);
-      try{await stage.requestFullscreen();}catch(e){restore();full.title='页面未允许全屏';}
+    slider.step='1';
+    const adjust = delta => {
+      slider.value=String(Math.max(10,Math.min(200,Number(slider.value)+delta)));
+      slider.oninput();
     };
-    panel.append(button,slider,output,full);
+    const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.title='缩小 1%';minus.setAttribute('aria-label',minus.title);
+    const plus=document.createElement('button');plus.type='button';plus.textContent='+';plus.title='放大 1%';plus.setAttribute('aria-label',plus.title);
+    minus.onclick=()=>adjust(-1);plus.onclick=()=>adjust(1);
+    panel.addEventListener('click',event=>event.stopPropagation());
+    panel.addEventListener('dblclick',event=>event.stopPropagation());
+    panel.append(button,minus,slider,plus,output);
     const state={button,panel,angle:0,base:video.style.rotate};
     button.addEventListener('click',event=>{
       event.preventDefault(); event.stopPropagation();
@@ -52,9 +63,9 @@
     for(const [video,state] of entries){
       if(!video.isConnected){state.panel.remove();entries.delete(video);continue;}
       const rect=fullscreen && fullscreen.contains(video)?{width:innerWidth,height:innerHeight,top:0,left:0,right:innerWidth,bottom:innerHeight}:video.getBoundingClientRect();
-      const visible=rect.width>=60 && rect.height>=50 && rect.bottom>0 && rect.right>0 && rect.top<innerHeight && rect.left<innerWidth && getComputedStyle(video).visibility!=='hidden';
+      const visible=controlsVisible && (!fullscreen || fullscreen.contains(video)) && rect.width>=60 && rect.height>=50 && rect.bottom>0 && rect.right>0 && rect.top<innerHeight && rect.left<innerWidth && getComputedStyle(video).visibility!=='hidden';
       state.panel.style.display=visible?'flex':'none';
-      state.panel.style.left=`${Math.max(0,Math.min(innerWidth-250,rect.right-254))}px`;
+      state.panel.style.left=`${Math.max(0,Math.min(innerWidth-state.panel.offsetWidth-8,rect.right-state.panel.offsetWidth-8))}px`;
       state.panel.style.top=`${Math.max(0,rect.top+8)}px`;
     }
     requestAnimationFrame(layout);

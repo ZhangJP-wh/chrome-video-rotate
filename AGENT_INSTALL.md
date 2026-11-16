@@ -2,11 +2,12 @@
 
 Repository: https://github.com/ZhangJP-wh/chrome-video-rotate
 
-1. Download or clone this repository into a persistent local folder.
-2. Open chrome://extensions and enable Developer mode.
-3. Choose Load unpacked and select the folder containing manifest.json.
-4. Refresh an ordinary HTML video page.
-5. Verify four rotation clicks return to the original orientation, the zoom slider changes content size, and the extension fullscreen button preserves access to controls. Press Esc and check that the video returns to its original page location.
-6. Report any unverified behavior honestly. Do not upload browsing history or private screenshots.
+1. Download or clone into a persistent local folder.
+2. Open chrome://extensions, enable Developer mode, and load the folder containing manifest.json.
+3. Refresh video pages after installation or updates.
+4. Verify four rotation clicks restore orientation; slider zoom ranges from 10% to 200%; minus and plus adjust by exactly one percentage point and clamp at limits.
+5. Verify all controls fade together when idle and become clear on hover or keyboard focus. No fullscreen button should be present.
+6. Click the extension icon in the toolbar or extensions menu: controls disappear on all pages; click again to restore them. Rotation and zoom must remain unchanged. Visibility should persist after refresh.
+7. Report unverified behavior honestly. Never upload browsing history or private screenshots.
 
-Updates: replace files in the same local folder, reload the extension, and refresh video pages. Do not rewrite code merely to install it.
+Updates do not automatically propagate from GitHub to installed folders. Replace files, reload the extension, and refresh pages.

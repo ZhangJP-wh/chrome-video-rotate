@@ -82,3 +82,9 @@ Removed extension fullscreen; added 1% adjustment buttons, unified idle transpar
 ## License
 
 MIT
+
+
+## 隐私政策 / Privacy policy
+
+参见 [PRIVACY.md](PRIVACY.md)，包括本地存储及在线服务的数据用途。
+See the privacy policy for local storage and online service data usage.

@@ -5,7 +5,7 @@ Chrome 扩展：视频右上角自动出现半透明控件，点击顺时针旋�
 A Chrome extension with translucent video controls: rotate clockwise by 90°, adjust zoom, and use fullscreen.
 
 **仓库 / Repo:** https://github.com/ZhangJP-wh/chrome-video-rotate  
-**版本 / Version:** 1.1.0
+**版本 / Version:** 1.1.1
 
 ## 一句话场景 / What it’s for
 
@@ -69,6 +69,10 @@ Replace the local folder, reload the extension, then refresh video pages. GitHub
 No login, analytics, cookies, browsing-history storage, or external requests. Video detection and display adjustments run locally; site access is needed for automatic detection.
 
 ## 变更 / Changelog
+
+### 1.1.1
+
+扩展图标改为方框加旋转箭头。 / Added rotation icons for the extension.
 
 ### 1.1.0
 

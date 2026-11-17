@@ -1,5 +1,7 @@
 (() => {
   'use strict';
+  const previous=document.querySelector('[data-video-rotate-root]');
+  if(previous) return;
   const entries = new Map();
   let controlsVisible = true;
   let visibilityRevision = 0;
@@ -15,6 +17,7 @@
   });
   const host = document.createElement('div');
   host.style.cssText = 'all:initial;position:fixed;inset:0;pointer-events:none;z-index:2147483647;';
+  host.setAttribute('data-video-rotate-root','');
   const root = host.attachShadow({mode:'closed'});
   root.innerHTML = `<style>
     button{all:unset;box-sizing:border-box;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:9px;color:white;background:rgba(25,25,28,.42);cursor:pointer;pointer-events:auto;transition:opacity .15s,background .15s;}
@@ -79,11 +82,28 @@
     const fullscreen=document.fullscreenElement;
     const parent=fullscreen && fullscreen.tagName!=='VIDEO' ? fullscreen : document.documentElement;
     if(host.parentNode!==parent) parent.append(host);
+    const candidates=[];
     for(const [video,state] of entries){
       if(!video.isConnected){state.panel.remove();entries.delete(video);continue;}
       const rect=fullscreen && fullscreen.contains(video)?{width:innerWidth,height:innerHeight,top:0,left:0,right:innerWidth,bottom:innerHeight}:playbackRect(video,state,time);
-      const visible=controlsVisible && (!fullscreen || fullscreen.contains(video)) && rect.width>=60 && rect.height>=50 && rect.bottom>0 && rect.right>0 && rect.top<innerHeight && rect.left<innerWidth && getComputedStyle(video).visibility!=='hidden';
-      state.panel.style.display=visible?'flex':'none';
+      let shown=true;
+      for(let el=video;el;el=el.parentElement || el.getRootNode()?.host){
+        const css=getComputedStyle(el);
+        if(css.display==='none' || css.visibility!=='visible' || Number(css.opacity)===0){shown=false;break;}
+      }
+      if(video.checkVisibility && !video.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) shown=false;
+      const visible=shown && controlsVisible && (!fullscreen || fullscreen.contains(video)) && rect.width>=60 && rect.height>=50 && rect.bottom>0 && rect.right>0 && rect.top<innerHeight && rect.left<innerWidth && getComputedStyle(video).visibility!=='hidden';
+      state.panel.style.display='none';
+      if(visible){
+        const width=Math.max(0,Math.min(innerWidth,rect.right)-Math.max(0,rect.left));
+        const height=Math.max(0,Math.min(innerHeight,rect.bottom)-Math.max(0,rect.top));
+        if(width>=60 && height>=50) candidates.push({video,state,rect,area:width*height});
+      }
+    }
+    // Main visible playback area wins over preview / preloaded videos.
+    candidates.sort((a,b)=>b.area-a.area || Number(a.video.paused)-Number(b.video.paused));
+    for(const {state,rect} of candidates.slice(0,1)){
+      state.panel.style.display='flex';
       state.panel.style.left=`${Math.max(0,Math.min(innerWidth-state.panel.offsetWidth-8,rect.right-state.panel.offsetWidth-8))}px`;
       state.panel.style.top=`${Math.max(0,rect.top+8)}px`;
     }
